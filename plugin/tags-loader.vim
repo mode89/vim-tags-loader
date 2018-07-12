@@ -12,4 +12,7 @@ function TagsLoaderBuildDatabase(dirs, patterns)
     endfor
 
     exec "!" . g:build_database_script . " " . dir_flags . " " .  pattern_flags
+
+    set tags=.tags/ctags.out
+    cscope add .tags/cscope.out
 endfunction
