@@ -1,0 +1,55 @@
+#!/bin/bash
+
+TAGS_DIR=".tags"
+FILES="$TAGS_DIR/files"
+
+while getopts ":d:p:" opt; do
+    case $opt in
+        d)
+            DIRS+="$OPTARG "
+        ;;
+        p)
+            PATTERNS+="$OPTARG "
+        ;;
+    esac
+done
+
+function create_tags_directory() {
+    if [ ! -d $TAGS_DIR ]; then
+        mkdir $TAGS_DIR
+    fi
+}
+
+function find_files() {
+    >&2 echo "Discovering files ..."
+    for pattern in $PATTERNS; do
+        if [[ ! -z $PATTERN_FLAGS ]]; then
+            PATTERN_FLAGS+="-o "
+        fi
+        PATTERN_FLAGS+="-iname $pattern "
+    done
+    find $DIRS $PATTERN_FLAGS
+}
+
+function quoted_files() {
+    echo "$1" | sed "s/\(^.\+\)/\"\1\"/"
+}
+
+function build_ctags_database() {
+    >&2 echo "Building ctags database ..."
+    echo "$FILES" | ctags \
+        -f "$TAGS_DIR/ctags.out" \
+        -L - \
+        --tag-relative=yes
+}
+
+function build_cscope_database() {
+    >&2 echo "Building cscope database ..."
+    echo "$(quoted_files "$FILES")" | \
+        cscope -b -i - -f "$TAGS_DIR/cscope.out"
+}
+
+FILES=$(find_files)
+create_tags_directory
+build_ctags_database
+build_cscope_database
